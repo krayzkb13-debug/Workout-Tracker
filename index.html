@@ -3,11 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-
-    <!-- PWA manifest -->
     <link rel="manifest" href="/manifest.json" />
-
-    <!-- Theme & icons -->
     <meta name="theme-color" content="#EC4899" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -16,16 +12,26 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
-
     <title>Workout Tracker</title>
     <style>
       *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
       html, body, #root { height: 100%; }
-      body { background: #08060A; -webkit-tap-highlight-color: transparent; }
+      body { background: #F4F5FB; -webkit-tap-highlight-color: transparent; }
       input[type=number]::-webkit-inner-spin-button,
       input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
       input[type=number] { -moz-appearance: textfield; }
     </style>
+    <!-- Kill any old service workers left over from vite-plugin-pwa -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (let reg of registrations) {
+            reg.unregister();
+            console.log('Unregistered old SW:', reg.scope);
+          }
+        });
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

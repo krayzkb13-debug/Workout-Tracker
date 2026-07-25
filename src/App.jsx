@@ -146,8 +146,10 @@ export default function WorkoutTracker() {
   const [view, setView] = useState("home");
   const [activeWorkout, setActiveWorkout] = useState(null);
   const [history, setHistory] = useState(() => lsGet("wt-history-v3", []));
+  const historyRef = useRef(lsGet("wt-history-v3", []));
   const [currentSets, setCurrentSets] = useState({});
   const currentSetsRef = useRef({});
+  const [toast, setToast] = useState(null); // { msg, total }
   const [inputs, setInputs] = useState({});
   const [extraSets, setExtraSets] = useState({});
   const [adHocExercises, setAdHocExercises] = useState([]);
@@ -162,6 +164,7 @@ export default function WorkoutTracker() {
   const [pickerSearch, setPickerSearch] = useState("");
 
   useEffect(() => { currentSetsRef.current = currentSets; }, [currentSets]);
+  useEffect(() => { historyRef.current = history; }, [history]);
 
   useEffect(() => {
     const link = document.createElement("link");
@@ -235,6 +238,7 @@ export default function WorkoutTracker() {
   };
 
   const finishWorkout = () => {
+    // Use refs so we always have the latest data regardless of React batching
     const snap = currentSetsRef.current;
     const allSets = {}; let total = 0;
     Object.entries(snap).forEach(([exId, arr]) => {
@@ -242,6 +246,7 @@ export default function WorkoutTracker() {
       const valid = arr.filter(Boolean);
       if (valid.length) { allSets[exId] = valid; total += valid.length; }
     });
+
     if (total > 0) {
       const w = activeWorkout;
       const entry = {
@@ -250,8 +255,14 @@ export default function WorkoutTracker() {
         sets: allSets, totalSets: total,
         exerciseNames: (w.sessionExercises || []).reduce((acc, e) => ({ ...acc, [e.id]: e.name }), {}),
       };
-      const nh = [entry, ...history];
-      setHistory(nh); saveHistory(nh);
+      // Use historyRef so we never lose previous entries to a stale closure
+      const nh = [entry, ...historyRef.current];
+      historyRef.current = nh;
+      setHistory(nh);
+      saveHistory(nh);
+      // Show save confirmation toast
+      setToast({ total, color: w.color });
+      setTimeout(() => setToast(null), 3000);
     }
     setView("home");
   };
@@ -322,6 +333,20 @@ export default function WorkoutTracker() {
   // HOME
   if (view === "home") return (
     <div style={base}>
+      {/* Save confirmation toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)",
+          zIndex: 999, background: toast.color, color: "#fff",
+          padding: "12px 24px", borderRadius: 50,
+          fontFamily: BF, fontSize: 14, fontWeight: 800, letterSpacing: 1,
+          boxShadow: `0 4px 20px ${toast.color}66`,
+          animation: "fadeIn 0.2s ease",
+          whiteSpace: "nowrap",
+        }}>
+          ✓ SAVED — {toast.total} SETS LOGGED
+        </div>
+      )}
       <div style={{ padding: "52px 18px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
           <div style={{ fontFamily: BF, fontSize: 11, letterSpacing: 4, color: "#AAAACC", textTransform: "uppercase", marginBottom: 4 }}>YOUR PROGRAM</div>
